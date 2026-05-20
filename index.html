@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>○○聖地巡礼</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+  <style>
+    :root {
+      --primary-color: #ffb3ba;
+      --secondary-color: #bae1ff;
+      --bg-color-1: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+      --bg-color-2: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+      --bg-color-3: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+      --bg-color-4: linear-gradient(270deg, #fdfbfb, #ebedee, #e0c3fc, #8ec5fc);
+      --glass-bg: rgba(255, 255, 255, 0.25);
+      --glass-border: rgba(255, 255, 255, 0.4);
+      --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+      --text-color: #2f3542;
+      --text-light: #ffffff;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', 'Noto Sans JP', sans-serif;
+      color: var(--text-color);
+      overflow: hidden; /* Prevent scrolling on body, manage in app */
+      touch-action: none; /* For Matter.js interaction */
+    }
+
+    /* Dynamic Backgrounds */
+    #bg-layer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: -2;
+      transition: background 1s ease-in-out;
+    }
+
+    .bg-level-1 { background: var(--bg-color-1); }
+    .bg-level-2 { background: var(--bg-color-2); }
+    .bg-level-3 { background: var(--bg-color-3); }
+    .bg-level-4 { 
+      background: linear-gradient(270deg, #ff9a9e, #fecfef, #a1c4fd, #c2e9fb);
+      background-size: 800% 800%;
+      animation: AnimationName 10s ease infinite;
+    }
+
+    @keyframes AnimationName {
+      0%{background-position:0% 50%}
+      50%{background-position:100% 50%}
+      100%{background-position:0% 50%}
+    }
+
+    .particles {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      background-image: radial-gradient(circle, rgba(255,255,255,0.3) 2px, transparent 2px);
+      background-size: 30px 30px;
+      opacity: 0;
+      transition: opacity 1s;
+    }
+    .bg-level-2 .particles, .bg-level-3 .particles, .bg-level-4 .particles {
+      opacity: 1;
+      animation: moveParticles 20s linear infinite;
+    }
+
+    @keyframes moveParticles {
+      from { background-position: 0 0; }
+      to { background-position: 100px 100px; }
+    }
+
+    /* Main App Container */
+    #app {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #physics-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0; /* Behind cards, in front of background */
+      pointer-events: none; /* Let clicks pass through to cards */
+    }
+    #physics-container canvas {
+      pointer-events: auto; /* Re-enable pointer events for canvas to interact with physics objects */
+    }
+
+    .scroll-container {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 20px;
+      z-index: 1;
+      padding-bottom: 120px;
+      scroll-behavior: smooth;
+    }
+
+    /* Custom scrollbar */
+    .scroll-container::-webkit-scrollbar {
+      width: 6px;
+    }
+    .scroll-container::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .scroll-container::-webkit-scrollbar-thumb {
+      background: var(--glass-bg);
+      border-radius: 10px;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      padding: 30px 20px 10px;
+      z-index: 1;
+      color: var(--text-light);
+      text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .header h1 {
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: 1px;
+    }
+    .catchphrase {
+      font-size: 14px;
+      font-weight: 700;
+      margin-top: 5px;
+      opacity: 0.9;
+    }
+
+    /* Glassmorphism Cards */
+    .glass-card {
+      background: var(--glass-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--glass-shadow);
+      border-radius: 24px;
+      padding: 20px;
+      margin-bottom: 20px;
+      color: var(--text-color);
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .glass-card:active {
+      transform: scale(0.98);
+    }
+
+    .glass-card h2 {
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 15px;
+      color: #fff;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    /* Passport Card */
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .avatar-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #fff;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .user-details {
+      display: flex;
+      flex-direction: column;
+    }
+    .username {
+      font-weight: 900;
+      font-size: 16px;
+      color: var(--text-color);
+    }
+    .user-id {
+      font-size: 11px;
+      color: rgba(0,0,0,0.5);
+      font-weight: 700;
+    }
+    .level-badge {
+      background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+      padding: 5px 15px;
+      border-radius: 20px;
+      font-weight: 900;
+      color: #fff;
+      box-shadow: 0 4px 10px rgba(255, 154, 158, 0.4);
+      animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0% { transform: translateY(0px); }
+      50% { transform: translateY(-5px); }
+      100% { transform: translateY(0px); }
+    }
+
+    .exp-container {
+      margin-bottom: 15px;
+    }
+    .exp-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .progress-bar {
+      height: 12px;
+      background: rgba(255,255,255,0.3);
+      border-radius: 6px;
+      overflow: hidden;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+      border-radius: 6px;
+      transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    }
+
+    .status-message {
+      font-size: 14px;
+      text-align: center;
+      font-weight: 700;
+      color: #fff;
+      opacity: 0.9;
+      background: rgba(0,0,0,0.1);
+      padding: 10px;
+      border-radius: 12px;
+    }
+
+    /* Map Section */
+    .map-placeholder {
+      height: 150px;
+      background: rgba(255,255,255,0.4);
+      border-radius: 16px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: 900;
+      color: rgba(0,0,0,0.2);
+      font-size: 24px;
+      margin-bottom: 15px;
+      border: 2px dashed rgba(255,255,255,0.6);
+    }
+
+    .visited-list {
+      list-style: none;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+    .visited-list li {
+      padding: 10px;
+      background: rgba(255,255,255,0.5);
+      margin-bottom: 8px;
+      border-radius: 10px;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: slideIn 0.3s ease-out;
+    }
+    .visited-list li::before {
+      content: '📍';
+    }
+    .visited-list li.empty-list {
+      background: none;
+      text-align: center;
+      display: block;
+      color: rgba(0,0,0,0.5);
+    }
+    .visited-list li.empty-list::before { content: ''; }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(-20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    /* Secret Section */
+    .secret-content {
+      text-align: center;
+      padding: 20px;
+      background: rgba(255,255,255,0.3);
+      border-radius: 16px;
+      transition: all 0.5s;
+    }
+    .secret-content.locked {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      color: rgba(0,0,0,0.5);
+    }
+    .lock-icon {
+      font-size: 40px;
+    }
+
+    .secret-content.unlocked {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      animation: glow 2s infinite alternate;
+    }
+    
+    .secret-gallery {
+      display: flex;
+      gap: 15px;
+      overflow-x: auto;
+      padding: 10px 0;
+      margin-bottom: 15px;
+      scroll-snap-type: x mandatory;
+    }
+    /* Custom scrollbar for gallery */
+    .secret-gallery::-webkit-scrollbar {
+      height: 6px;
+    }
+    .secret-gallery::-webkit-scrollbar-track {
+      background: rgba(0,0,0,0.05);
+      border-radius: 10px;
+    }
+    .secret-gallery::-webkit-scrollbar-thumb {
+      background: var(--primary-color);
+      border-radius: 10px;
+    }
+
+    .secret-img {
+      width: 250px;
+      height: 250px;
+      object-fit: cover;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+    .playlist-ui {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: var(--primary-color);
+      color: white;
+      padding: 12px;
+      border-radius: 20px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(255, 107, 129, 0.4);
+    }
+
+    @keyframes glow {
+      from { box-shadow: 0 0 10px rgba(255, 255, 255, 0.2); }
+      to { box-shadow: 0 0 20px rgba(255, 255, 255, 0.6); }
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* FAB NFC Button */
+    .fab {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      width: 70px;
+      height: 70px;
+      border-radius: 35px;
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      border: none;
+      box-shadow: 0 8px 20px rgba(0, 242, 254, 0.4);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      z-index: 100;
+      transition: transform 0.2s, box-shadow 0.2s;
+      /* Pulsing effect */
+      animation: pulse 2s infinite;
+    }
+    .fab:active {
+      transform: scale(0.9);
+    }
+    .nfc-icon {
+      font-size: 28px;
+    }
+    .nfc-text {
+      font-size: 12px;
+      font-weight: bold;
+      margin-top: 2px;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(0, 242, 254, 0.7); }
+      70% { box-shadow: 0 0 0 20px rgba(0, 242, 254, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(0, 242, 254, 0); }
+    }
+
+    /* Scan Overlay */
+    #scan-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(255,255,255,0.8);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      opacity: 1;
+      transition: opacity 0.3s;
+    }
+    #scan-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .scan-circle {
+      width: 100px;
+      height: 100px;
+      border: 4px solid var(--primary-color);
+      border-radius: 50%;
+      border-top-color: transparent;
+      animation: spin 1s linear infinite;
+      margin-bottom: 20px;
+    }
+
+    .scan-text {
+      font-size: 20px;
+      font-weight: bold;
+      color: var(--primary-color);
+      animation: blink 1s infinite;
+    }
+
+    @keyframes spin {
+      100% { transform: rotate(360deg); }
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    /* Level Up overlay */
+    .level-up-toast {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.5);
+      background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+      padding: 20px 40px;
+      border-radius: 30px;
+      color: white;
+      font-weight: 900;
+      font-size: 24px;
+      box-shadow: 0 10px 30px rgba(253, 160, 133, 0.5);
+      z-index: 300;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .level-up-toast.show {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+  </style>
+</head>
+<body>
+  <!-- Dynamic Background -->
+  <div id="bg-layer" class="bg-level-1">
+    <div class="particles" id="particles"></div>
+  </div>
+
+  <!-- Main App Container -->
+  <div id="app">
+    <header class="header">
+      <h1>○○聖地巡礼</h1>
+      <p class="catchphrase">NFCを読み取って旅を育てよう</p>
+    </header>
+
+    <!-- Matter.js Canvas for physics objects (stamps falling) -->
+    <div id="physics-container"></div>
+
+    <main class="scroll-container">
+      <!-- Passport Card (Glassmorphism) -->
+      <section class="glass-card passport-card" id="passport-card">
+        <div class="card-header">
+          <div class="user-info">
+            <img src="assets/avatar.png" alt="Avatar" class="avatar-icon" onerror="this.onerror=null; this.src='https://api.dicebear.com/7.x/bottts/svg?seed=mimiko';">
+            <div class="user-details">
+              <span class="username">みみこ@推し活専用</span>
+              <span class="user-id">ID: @mimiko_oshi</span>
+            </div>
+          </div>
+          <div class="level-badge" id="level-badge">Lv.1</div>
+        </div>
+        
+        <div class="exp-container">
+          <div class="exp-labels">
+            <span>EXP</span>
+            <span id="exp-text">0 / 100</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="exp-fill" style="width: 0%;"></div>
+          </div>
+        </div>
+        
+        <div class="status-message" id="status-message">
+          旅の始まり。新しい場所を訪れよう！
+        </div>
+      </section>
+
+      <!-- Map & Locations Section -->
+      <section class="glass-card locations-card">
+        <h2><span class="material-icons-round">map</span> 訪問履歴</h2>
+        <div class="map-container" id="map-container">
+          <!-- Simplified Map Placeholder -->
+          <div class="map-placeholder">
+            <span>MAP</span>
+          </div>
+        </div>
+        <ul class="visited-list" id="visited-list">
+          <li class="empty-list">まだ訪問した場所はありません</li>
+        </ul>
+      </section>
+
+      <!-- Regional Info Section -->
+      <section class="glass-card region-card hidden" id="region-section">
+        <h2><span class="material-icons-round">volunteer_activism</span> まちの魅力・サポート情報</h2>
+        <div id="region-content" class="region-content">
+          <!-- Data populated by JS -->
+        </div>
+      </section>
+
+      <!-- Unlockables Section -->
+      <section class="glass-card secret-card" id="secret-section">
+        <h2><span class="material-icons-round">lock</span> シークレット</h2>
+        <div class="secret-content locked" id="secret-content">
+          <span class="material-icons-round lock-icon">lock</span>
+          <p>Lv.3で解放されます</p>
+        </div>
+        <div class="secret-content unlocked hidden" id="secret-content-unlocked">
+          <div class="secret-gallery" id="secret-gallery">
+            <!-- Images populated by JS -->
+          </div>
+          <div class="playlist-ui" id="play-voice-btn">
+            <span class="material-icons-round">play_circle_filled</span>
+            <span>限定ボイスを再生</span>
+          </div>
+          <a href="https://open.spotify.com/" target="_blank" style="text-decoration:none;" class="playlist-ui">
+            <span class="material-icons-round">queue_music</span>
+            <span>公式プレイリストを開く</span>
+          </a>
+        </div>
+      </section>
+      
+      <!-- padding for bottom spacing -->
+      <div style="height: 100px;"></div>
+    </main>
+
+    <!-- Simulated NFC Tap Button -->
+    <button class="fab nfc-btn floating" id="nfc-scan-btn">
+      <span class="material-icons-round nfc-icon">contactless</span>
+      <span class="nfc-text">Tap</span>
+    </button>
+  </div>
+
+  <!-- Overlay for scan animation -->
+  <div id="scan-overlay" class="hidden">
+    <div class="scan-circle"></div>
+    <div class="scan-text">Scanning...</div>
+  </div>
+
+  <!-- Data Service Module -->
+  <script>
+    // Simulate Data Access Object for User Profile
+    const STORAGE_KEY = 'oshikatsu_passport_data';
+
+    const DEFAULT_DATA = {
+      userId: 'user_' + Math.random().toString(36).substring(2, 9),
+      level: 1,
+      exp: 0,
+      maxExp: 100, // Level 1 -> 2 needs 100 EXP
+      visits: []
+    };
+
+    // Available locations to mock stamp rally (宮崎県を例にした詳細データ)
+    const MOCK_LOCATIONS = [
+      {
+        name: "サンメッセ日南",
+        prefecture: "宮崎県日南市",
+        migration: "日南市では、お試し居住や空き家バンク制度、移住支援金の交付などを通じて移住者を積極的に受け入れています。",
+        childcare: "第2子以降の保育料無償化や、子育て支援センターの充実など、安心して子育てできる環境が整っています。",
+        welfare: "高齢者向けのコミュニティバス運行や、地域包括支援センターによるきめ細かいサポートがあります。",
+        spots: ["モアイ像", "鵜戸神宮", "シャンシャン茶屋（絶品チキン南蛮）"]
+      },
+      {
+        name: "青島神社",
+        prefecture: "宮崎県宮崎市",
+        migration: "宮崎市は「移住コンシェルジュ」を配置し、仕事や住まいの相談にワンストップで対応しています。",
+        childcare: "待機児童ゼロを維持し、医療費助成も充実。サーフィンなど自然と触れ合う子育てが人気です。",
+        welfare: "バリアフリー化された観光地づくりや、地域共生型サービスが推進されています。",
+        spots: ["鬼の洗濯板", "青島ビーチパーク", "AOSHIMA BEACH VILLAGE"]
+      },
+      {
+        name: "高千穂峡",
+        prefecture: "宮崎県高千穂町",
+        migration: "高千穂町では、就農支援や起業支援が手厚く、大自然の中での新しいチャレンジを応援しています。",
+        childcare: "自然豊かな環境でのびのびと育てられるほか、給食費の補助など独自の支援を行っています。",
+        welfare: "地域医療の確保や、集落ごとの見守り活動が活バツに行われています。",
+        spots: ["真名井の滝", "天岩戸神社", "高千穂牛レストラン和"]
+      }
+    ];
+
+    const dataService = {
+      loadData: () => {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          try {
+            return JSON.parse(saved);
+          } catch (e) {
+            console.error('Failed to parse saved data', e);
+            return { ...DEFAULT_DATA };
+          }
+        }
+        return { ...DEFAULT_DATA };
+      },
+
+      saveData: (data) => {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      },
+
+      resetData: () => {
+        localStorage.removeItem(STORAGE_KEY);
+      },
+
+      getRandomLocation: () => {
+        const idx = Math.floor(Math.random() * MOCK_LOCATIONS.length);
+        return MOCK_LOCATIONS[idx];
+      }
+    };
+  </script>
+
+  <!-- Physics Engine Module (Matter.js wrapper) -->
+  <script>
+    // Matter.js setup for "touch and play" physics UI
+    const physicsSystem = (() => {
+      const Engine = Matter.Engine,
+            Render = Matter.Render,
+            Runner = Matter.Runner,
+            Bodies = Matter.Bodies,
+            Composite = Matter.Composite,
+            Mouse = Matter.Mouse,
+            MouseConstraint = Matter.MouseConstraint;
+
+      let engine, render, runner, world;
+      let width = window.innerWidth;
+      let height = window.innerHeight;
+
+      const init = () => {
+        const container = document.getElementById('physics-container');
+        
+        // Create engine
+        engine = Engine.create();
+        world = engine.world;
+        // Set a light gravity for floating effect
+        engine.gravity.y = 0.5;
+
+        // Create renderer
+        render = Render.create({
+          element: container,
+          engine: engine,
+          options: {
+            width: width,
+            height: height,
+            wireframes: false,
+            background: 'transparent',
+            pixelRatio: window.devicePixelRatio
+          }
+        });
+
+        Render.run(render);
+
+        // Create runner
+        runner = Runner.create();
+        Runner.run(runner, engine);
+
+        // Add boundaries (floor and walls)
+        // Wall bounds so objects don't fly off-screen easily
+        const wallOptions = { 
+          isStatic: true, 
+          render: { visible: false } 
+        };
+        
+        // Bottom boundary (floor)
+        const floor = Bodies.rectangle(width / 2, height + 25, width + 100, 50, wallOptions);
+        // Left boundary
+        const leftWall = Bodies.rectangle(-25, height / 2, 50, height, wallOptions);
+        // Right boundary
+        const rightWall = Bodies.rectangle(width + 25, height / 2, 50, height, wallOptions);
+
+        Composite.add(world, [floor, leftWall, rightWall]);
+
+        // Add mouse control
+        const mouse = Mouse.create(render.canvas);
+        const mouseConstraint = MouseConstraint.create(engine, {
+          mouse: mouse,
+          constraint: {
+            stiffness: 0.2,
+            render: {
+              visible: false
+            }
+          }
+        });
+        Composite.add(world, mouseConstraint);
+        
+        // Keep the mouse in sync with rendering
+        render.mouse = mouse;
+
+        // Handle resize
+        window.addEventListener('resize', () => {
+          width = window.innerWidth;
+          height = window.innerHeight;
+          render.canvas.width = width;
+          render.canvas.height = height;
+          Matter.Body.setPosition(floor, { x: width / 2, y: height + 25 });
+          Matter.Body.setPosition(rightWall, { x: width + 25, y: height / 2 });
+        });
+      };
+
+      const addStamp = (label) => {
+        if (!world) return;
+
+        // Colors for stamps (Lighter Pastel)
+        const colors = ['#ffb3ba', '#ffdfba', '#ffffba', '#baffc9', '#bae1ff', '#e8bafc'];
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        
+        // Random position at top
+        const x = Math.random() * (width - 100) + 50;
+        const y = -50;
+        const radius = 30 + Math.random() * 10;
+
+        // Create a circular body to act as a stamp
+        const stamp = Bodies.circle(x, y, radius, {
+          restitution: 0.8, // Bouncy
+          friction: 0.005,
+          render: {
+            fillStyle: color,
+            strokeStyle: '#fff',
+            lineWidth: 3
+          }
+        });
+
+        Composite.add(world, stamp);
+
+        // Initial pop force
+        Matter.Body.setVelocity(stamp, { x: (Math.random() - 0.5) * 10, y: 5 });
+      };
+
+      const clearStamps = () => {
+        if (!world) return;
+        const bodiesToRemove = Composite.allBodies(world).filter(b => !b.isStatic);
+        Composite.remove(world, bodiesToRemove);
+      };
+
+      return { init, addStamp, clearStamps };
+    })();
+  </script>
+
+  <!-- Main App Controller -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Initialize state
+      let userData = dataService.loadData();
+      
+      // DOM Elements
+      const expFill = document.getElementById('exp-fill');
+      const expText = document.getElementById('exp-text');
+      const levelBadge = document.getElementById('level-badge');
+      const visitedList = document.getElementById('visited-list');
+      const nfcBtn = document.getElementById('nfc-scan-btn');
+      const scanOverlay = document.getElementById('scan-overlay');
+      const bgLayer = document.getElementById('bg-layer');
+      const secretContent = document.getElementById('secret-content');
+      const secretContentUnlocked = document.getElementById('secret-content-unlocked');
+      const playVoiceBtn = document.getElementById('play-voice-btn');
+      const regionSection = document.getElementById('region-section');
+      const regionContent = document.getElementById('region-content');
+
+      // Initialize Physics
+      physicsSystem.init();
+
+      // Initial UI Render
+      const renderUI = () => {
+        // Update EXP Bar
+        const expPercentage = (userData.exp / userData.maxExp) * 100;
+        expFill.style.width = `${Math.min(expPercentage, 100)}%`;
+        expText.textContent = `${userData.exp} / ${userData.maxExp}`;
+        
+        // Update Level Badge
+        levelBadge.textContent = `Lv.${userData.level}`;
+
+        // Update Background based on level (Cycle through 1 to 4)
+        bgLayer.className = `bg-level-${((userData.level - 1) % 4) + 1}`;
+
+        // Update Visited List
+        visitedList.innerHTML = '';
+        if (userData.visits.length === 0) {
+          const emptyLi = document.createElement('li');
+          emptyLi.className = 'empty-list';
+          emptyLi.textContent = 'まだ訪問した場所はありません';
+          visitedList.appendChild(emptyLi);
+        } else {
+          userData.visits.forEach(visit => {
+            const li = document.createElement('li');
+            li.textContent = visit.name || visit; // Support both old string and new object data
+            visitedList.appendChild(li);
+          });
+          
+          // Show regional info for the latest visit
+          const latestVisit = userData.visits[userData.visits.length - 1];
+          if (latestVisit && latestVisit.migration) {
+            regionSection.classList.remove('hidden');
+            regionContent.innerHTML = `
+              <h3 style="margin-bottom: 10px; color: var(--primary-color);">${latestVisit.name} <small style="color: #666; font-size: 0.8em;">(${latestVisit.prefecture})</small></h3>
+              <div style="font-size: 13px; line-height: 1.5; background: rgba(255,255,255,0.4); padding: 10px; border-radius: 8px; margin-bottom: 8px;">
+                <strong>🏠 移住制度:</strong> <p style="margin-top: 4px; color: #444;">${latestVisit.migration}</p>
+              </div>
+              <div style="font-size: 13px; line-height: 1.5; background: rgba(255,255,255,0.4); padding: 10px; border-radius: 8px; margin-bottom: 8px;">
+                <strong>👶 子育て支援:</strong> <p style="margin-top: 4px; color: #444;">${latestVisit.childcare}</p>
+              </div>
+              <div style="font-size: 13px; line-height: 1.5; background: rgba(255,255,255,0.4); padding: 10px; border-radius: 8px; margin-bottom: 8px;">
+                <strong>🤝 福祉サポート:</strong> <p style="margin-top: 4px; color: #444;">${latestVisit.welfare}</p>
+              </div>
+              <div style="font-size: 13px; line-height: 1.5; background: rgba(255,255,255,0.4); padding: 10px; border-radius: 8px;">
+                <strong>✨ おすすめスポット:</strong>
+                <ul style="margin-top: 4px; padding-left: 20px; color: #444;">
+                  ${latestVisit.spots.map(s => `<li>${s}</li>`).join('')}
+                </ul>
+              </div>
+            `;
+          }
+        }
+
+        // Check Unlockables & Dynamic Secret Image
+        if (userData.level >= 3) {
+          secretContent.classList.add('hidden');
+          secretContentUnlocked.classList.remove('hidden');
+          
+          // Update Secret Image Gallery based on level
+          const secretGallery = document.getElementById('secret-gallery');
+          if (secretGallery) {
+            secretGallery.innerHTML = ''; // Clear existing
+            // Add an image for each level unlocked (from level 3 to current)
+            for (let lvl = 3; lvl <= userData.level; lvl++) {
+              const wrapper = document.createElement('div');
+              wrapper.style.position = 'relative';
+              wrapper.style.flexShrink = '0';
+              wrapper.style.scrollSnapAlign = 'center';
+
+              const img = document.createElement('img');
+              img.src = 'assets/secret_image.jpg';
+              img.className = 'secret-img';
+              img.alt = `Level ${lvl} Secret`;
+              img.onerror = () => { img.src = `https://via.placeholder.com/250x250?text=Lv.${lvl}+Secret`; };
+              // Change hue per level to make them visually distinct
+              img.style.filter = `hue-rotate(${lvl * 45}deg) saturate(1.2)`;
+              
+              const label = document.createElement('div');
+              label.textContent = `Lv.${lvl}`;
+              label.style.position = 'absolute';
+              label.style.bottom = '10px';
+              label.style.right = '10px';
+              label.style.background = 'rgba(0,0,0,0.6)';
+              label.style.color = '#fff';
+              label.style.padding = '4px 8px';
+              label.style.borderRadius = '8px';
+              label.style.fontWeight = 'bold';
+              label.style.fontSize = '12px';
+
+              wrapper.appendChild(img);
+              wrapper.appendChild(label);
+              secretGallery.appendChild(wrapper);
+            }
+          }
+        }
+      };
+
+      // Re-drop stamps on load for existing visits
+      const initStamps = () => {
+        userData.visits.forEach((_, i) => {
+          setTimeout(() => physicsSystem.addStamp('stamp'), i * 150);
+        });
+      };
+
+      // Level Up Logic
+      const checkLevelUp = () => {
+        if (userData.exp >= userData.maxExp) {
+          userData.level += 1;
+          userData.exp = userData.exp - userData.maxExp;
+          userData.maxExp = userData.level * 100; // Linear scaling for realistic Level 50+
+          
+          showLevelUpToast(userData.level);
+          
+          // Trigger confetti/stamp burst
+          for(let i=0; i<5; i++) {
+            setTimeout(() => physicsSystem.addStamp('levelup'), i * 100);
+          }
+        }
+      };
+
+      // Toast notification
+      const showLevelUpToast = (newLevel) => {
+        const toast = document.createElement('div');
+        toast.className = 'level-up-toast';
+        toast.textContent = `LEVEL UP! Lv.${newLevel}`;
+        document.body.appendChild(toast);
+        
+        // Trigger animation
+        setTimeout(() => toast.classList.add('show'), 10);
+        
+        // Remove after 3s
+        setTimeout(() => {
+          toast.classList.remove('show');
+          setTimeout(() => toast.remove(), 500);
+        }, 3000);
+      };
+
+      // Handle Scan Action
+      const performScan = () => {
+        // Show scanning UI
+        scanOverlay.classList.remove('hidden');
+
+        // Simulate network/NFC delay
+        setTimeout(() => {
+          scanOverlay.classList.add('hidden');
+          
+          // Get new location
+          const newLocation = dataService.getRandomLocation();
+          userData.visits.push(newLocation);
+          
+          // Add EXP
+          userData.exp += 35; // 35 EXP per scan
+          
+          // Check Level Up
+          checkLevelUp();
+          
+          // Save
+          dataService.saveData(userData);
+          
+          // Update UI
+          renderUI();
+          
+          // Drop new stamp
+          physicsSystem.addStamp(newLocation.name || newLocation);
+          
+        }, 1200);
+      };
+
+      // Handle Voice Play
+      if (playVoiceBtn) {
+        playVoiceBtn.addEventListener('click', () => {
+          if ('speechSynthesis' in window) {
+            // Cancel any ongoing speech
+            window.speechSynthesis.cancel();
+            
+            const msg = new SpeechSynthesisUtterance();
+            msg.text = `レベル${userData.level}、おめでとーっ！今日も会いに来てくれて、すっごく嬉しいなっ！これからもいーっぱい、いろんなところ一緒に行こうね！`;
+            msg.lang = 'ja-JP';
+            msg.rate = 1.35; // さらに少し早口にして元気さをアピール
+            msg.pitch = 1.9; // ピッチを限界近くまで上げて可愛らしい声に
+            
+            // 可能であれば女性の声を選択する
+            const voices = window.speechSynthesis.getVoices();
+            const jaVoices = voices.filter(v => v.lang.includes('ja'));
+            if (jaVoices.length > 0) {
+               // Microsoft Nanami（可愛らしい声）やその他の日本語音声があれば優先
+               const cuteVoice = jaVoices.find(v => v.name.includes('Nanami') || v.name.includes('Haruka'));
+               if (cuteVoice) {
+                   msg.voice = cuteVoice;
+               } else {
+                   msg.voice = jaVoices[0];
+               }
+            }
+            
+            window.speechSynthesis.speak(msg);
+            
+            // 視覚的なフィードバック
+            playVoiceBtn.style.transform = 'scale(0.95)';
+            setTimeout(() => playVoiceBtn.style.transform = 'none', 150);
+          } else {
+            alert("お使いのブラウザは音声再生に対応していません。");
+          }
+        });
+      }
+
+      // Event Listeners
+      nfcBtn.addEventListener('click', performScan);
+
+      // Boot
+      renderUI();
+      // Small delay before dropping initial stamps for performance
+      setTimeout(initStamps, 500);
+    });
+  </script>
+</body>
+</html>
