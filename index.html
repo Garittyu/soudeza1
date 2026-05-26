@@ -3,11 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>○○聖地巡礼</title>
+  <title>宮崎聖地巡礼</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+  
   <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
   <style>
     :root {
@@ -266,19 +267,79 @@
       border-radius: 12px;
     }
 
-    /* Map Section */
-    .map-placeholder {
-      height: 150px;
-      background: rgba(255,255,255,0.4);
-      border-radius: 16px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-weight: 900;
-      color: rgba(0,0,0,0.2);
-      font-size: 24px;
+    /* Premium Offline Illustration Map Styling */
+    .map-illustration-container {
+      position: relative;
+      width: 100%;
+      height: 250px;
+      border-radius: 24px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      box-shadow: inset 0 2px 10px rgba(0,0,0,0.05);
       margin-bottom: 15px;
-      border: 2px dashed rgba(255,255,255,0.6);
+      background: #f0f4f8;
+    }
+
+    .map-svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* Interactive HTML pins layered over the SVG */
+    .map-pin-interactive {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      transform: translate(-50%, -100%);
+      transform-origin: bottom center;
+      z-index: 10;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .map-pin-interactive:hover {
+      transform: translate(-50%, -100%) scale(1.15);
+      z-index: 20;
+    }
+
+    .map-pin-interactive .pin-icon {
+      font-size: 34px;
+      color: rgba(47, 53, 66, 0.45); /* Locked state (gray) */
+      filter: drop-shadow(0 2px 3px rgba(0,0,0,0.2));
+      transition: all 0.5s;
+    }
+
+    .map-pin-interactive.active .pin-icon {
+      color: #ff6b81; /* Active state */
+      filter: drop-shadow(0 0 8px rgba(255, 107, 129, 0.9));
+      animation: bounce 1.5s infinite alternate ease-in-out;
+    }
+
+    .map-pin-interactive.active::after {
+      content: '';
+      position: absolute;
+      bottom: 10px;
+      width: 8px;
+      height: 8px;
+      background: rgba(255, 107, 129, 0.4);
+      border-radius: 50%;
+      animation: pinPulse 1.5s infinite;
+      z-index: -1;
+    }
+
+    .map-pin-interactive .pin-label {
+      font-size: 9px;
+      font-weight: 900;
+      background: rgba(47, 53, 66, 0.85);
+      color: #fff;
+      padding: 3px 6px;
+      border-radius: 8px;
+      margin-top: -3px;
+      white-space: nowrap;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+      border: 1px solid rgba(255, 255, 255, 0.15);
     }
 
     .visited-list {
@@ -311,6 +372,22 @@
     @keyframes slideIn {
       from { opacity: 0; transform: translateX(-20px); }
       to { opacity: 1; transform: translateX(0); }
+    }
+
+    @keyframes bounce {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(-5px); }
+    }
+
+    @keyframes pinPulse {
+      0% { transform: scale(1); opacity: 1; }
+      100% { transform: scale(2.8); opacity: 0; }
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-4px); }
+      40%, 80% { transform: translateX(4px); }
     }
 
     /* Secret Section */
@@ -367,6 +444,7 @@
       border-radius: 12px;
       box-shadow: 0 4px 15px rgba(0,0,0,0.2);
     }
+    
     .playlist-ui {
       display: flex;
       align-items: center;
@@ -500,6 +578,51 @@
       opacity: 1;
       transform: translate(-50%, -50%) scale(1);
     }
+
+    /* Premium Admin Input styling (Fully visible but content is masked) */
+    .admin-command-container {
+      position: relative;
+      text-align: center;
+      padding: 25px 20px;
+      margin-top: 30px;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 24px;
+      border: 1px dashed rgba(255, 255, 255, 0.35);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: inset 0 2px 10px rgba(255,255,255,0.05);
+      transition: all 0.3s ease;
+    }
+    
+    .admin-command-container:hover, .admin-command-container:focus-within {
+      background: rgba(255, 255, 255, 0.18);
+      border-color: rgba(255, 255, 255, 0.6);
+      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+    }
+
+    .admin-command-container input {
+      background: rgba(255, 255, 255, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      color: var(--text-color);
+      padding: 12px 20px;
+      border-radius: 24px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 700;
+      outline: none;
+      width: 200px;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+
+    .admin-command-container input:focus {
+      width: 260px;
+      background: rgba(255, 255, 255, 0.6);
+      border-color: var(--primary-color);
+      box-shadow: 0 4px 20px rgba(255, 179, 186, 0.4);
+    }
   </style>
 </head>
 <body>
@@ -511,7 +634,7 @@
   <!-- Main App Container -->
   <div id="app">
     <header class="header">
-      <h1>○○聖地巡礼</h1>
+      <h1>宮崎聖地巡礼</h1>
       <p class="catchphrase">NFCを読み取って旅を育てよう</p>
     </header>
 
@@ -549,11 +672,70 @@
 
       <!-- Map & Locations Section -->
       <section class="glass-card locations-card">
-        <h2><span class="material-icons-round">map</span> 訪問履歴</h2>
-        <div class="map-container" id="map-container">
-          <!-- Simplified Map Placeholder -->
-          <div class="map-placeholder">
-            <span>MAP</span>
+        <h2><span class="material-icons-round">map</span> 訪問履歴マップ</h2>
+        <!-- Premium Offline Miyazaki/Kyushu Vector Map -->
+        <div class="map-illustration-container">
+          <svg class="map-svg" viewBox="0 0 300 240" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="seaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#e3f2fd" />
+                <stop offset="100%" stop-color="#bbdefb" />
+              </linearGradient>
+              <linearGradient id="landGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#f1f8e9" />
+                <stop offset="100%" stop-color="#dcedc8" />
+              </linearGradient>
+            </defs>
+            <!-- Ocean background -->
+            <rect width="300" height="240" rx="20" fill="url(#seaGrad)"/>
+            
+            <!-- Kyush/Miyazaki beautiful stylized silhouette -->
+            <path d="M 60,30 
+                     C 80,25 120,40 135,48 
+                     C 145,55 142,75 148,85 
+                     C 155,95 168,105 162,125 
+                     C 155,145 150,175 135,195 
+                     C 125,205 105,210 95,205
+                     C 90,195 78,175 73,165 
+                     C 68,155 52,145 48,135 
+                     C 42,125 48,105 52,85 
+                     C 58,65 48,45 60,30 Z" 
+                  fill="url(#landGrad)" stroke="#9ccc65" stroke-width="2.5" stroke-linejoin="round" filter="drop-shadow(0 4px 10px rgba(0,0,0,0.06))"/>
+            
+            <!-- Stylized dashed prefecture border line for Miyazaki region -->
+            <path d="M 95,85 C 105,95 115,100 120,115 C 122,125 110,140 108,155 C 105,170 120,185 115,198" 
+                  fill="none" stroke="#c5e1a5" stroke-width="1.5" stroke-dasharray="3,3"/>
+
+            <!-- Graphical mountain icons -->
+            <polygon points="75,70 85,85 65,85" fill="#a5d6a7" opacity="0.6"/>
+            <polygon points="85,65 92,80 78,80" fill="#a5d6a7" opacity="0.5"/>
+            <polygon points="85,145 95,160 75,160" fill="#a5d6a7" opacity="0.6"/>
+            
+            <!-- Wave decorations -->
+            <path d="M 190,60 Q 200,55 210,60" fill="none" stroke="#90caf9" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+            <path d="M 210,140 Q 220,135 230,140" fill="none" stroke="#90caf9" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+            
+            <!-- Compass design -->
+            <g transform="translate(260, 45)">
+              <circle cx="0" cy="0" r="14" fill="none" stroke="rgba(0,0,0,0.05)" stroke-width="1.5"/>
+              <polygon points="0,-16 -3,-4 0,-7 3,-4" fill="#ffb3ba"/>
+              <polygon points="0,16 -3,4 0,7 3,4" fill="rgba(0,0,0,0.15)"/>
+              <text x="-3" y="-19" font-size="7" font-weight="bold" fill="rgba(0,0,0,0.25)">N</text>
+            </g>
+          </svg>
+
+          <!-- Interactive HTML markers absolute-layered over Miyazaki vector -->
+          <div class="map-pin-interactive" id="pin-takachiho-ill" style="top: 28%; left: 37%;">
+            <span class="material-icons-round pin-icon">place</span>
+            <span class="pin-label">高千穂峡</span>
+          </div>
+          <div class="map-pin-interactive" id="pin-aoshima-ill" style="top: 55%; left: 49%;">
+            <span class="material-icons-round pin-icon">place</span>
+            <span class="pin-label">青島神社</span>
+          </div>
+          <div class="map-pin-interactive" id="pin-nichinan-ill" style="top: 70%; left: 44%;">
+            <span class="material-icons-round pin-icon">place</span>
+            <span class="pin-label">サンメッセ日南</span>
           </div>
         </div>
         <ul class="visited-list" id="visited-list">
@@ -591,6 +773,12 @@
         </div>
       </section>
       
+      <!-- Admin Command Input Area (Visible, but input value is fully masked) -->
+      <div class="admin-command-container">
+        <p style="font-size: 10px; color: rgba(255,255,255,0.7); margin-bottom: 10px; font-weight: 900; letter-spacing: 1.5px; text-shadow: 0 1px 2px rgba(0,0,0,0.1);">🔧 SYSTEM ADMINISTRATION</p>
+        <input type="password" id="admin-code-input" placeholder="🔑 運営用コマンドを入力..." autocomplete="off">
+      </div>
+      
       <!-- padding for bottom spacing -->
       <div style="height: 100px;"></div>
     </main>
@@ -621,7 +809,7 @@
       visits: []
     };
 
-    // Available locations to mock stamp rally (宮崎県を例にした詳細データ)
+    // Available locations to mock stamp rally (宮崎県を例にした詳細データと公式リンク)
     const MOCK_LOCATIONS = [
       {
         name: "サンメッセ日南",
@@ -629,7 +817,8 @@
         migration: "日南市では、お試し居住や空き家バンク制度、移住支援金の交付などを通じて移住者を積極的に受け入れています。",
         childcare: "第2子以降の保育料無償化や、子育て支援センターの充実など、安心して子育てできる環境が整っています。",
         welfare: "高齢者向けのコミュニティバス運行や、地域包括支援センターによるきめ細かいサポートがあります。",
-        spots: ["モアイ像", "鵜戸神宮", "シャンシャン茶屋（絶品チキン南蛮）"]
+        spots: ["モアイ像", "鵜戸神宮", "シャンシャン茶屋（絶品チキン南蛮）"],
+        link: "https://www.city.nichinan.lg.jp/soshiki/sougou_seisaku/chiikishinko/ijuteju/index.html"
       },
       {
         name: "青島神社",
@@ -637,15 +826,17 @@
         migration: "宮崎市は「移住コンシェルジュ」を配置し、仕事や住まいの相談にワンストップで対応しています。",
         childcare: "待機児童ゼロを維持し、医療費助成も充実。サーフィンなど自然と触れ合う子育てが人気です。",
         welfare: "バリアフリー化された観光地づくりや、地域共生型サービスが推進されています。",
-        spots: ["鬼の洗濯板", "青島ビーチパーク", "AOSHIMA BEACH VILLAGE"]
+        spots: ["鬼の洗濯板", "青島ビーチパーク", "AOSHIMA BEACH VILLAGE"],
+        link: "https://www.city.miyazaki.miyazaki.jp/city/promotion/ijyu/"
       },
       {
         name: "高千穂峡",
         prefecture: "宮崎県高千穂町",
         migration: "高千穂町では、就農支援や起業支援が手厚く、大自然の中での新しいチャレンジを応援しています。",
         childcare: "自然豊かな環境でのびのびと育てられるほか、給食費の補助など独自の支援を行っています。",
-        welfare: "地域医療の確保や、集落ごとの見守り活動が活バツに行われています。",
-        spots: ["真名井の滝", "天岩戸神社", "高千穂牛レストラン和"]
+        welfare: "地域医療の確保や、集落ごとの見守り活動が活発に行われています。",
+        spots: ["真名井の滝", "天岩戸神社", "高千穂牛レストラン和"],
+        link: "https://www.town-takachiho.jp/soshiki/seisaku/ijyuteijyu/"
       }
     ];
 
@@ -827,9 +1018,38 @@
       // Initialize Physics
       physicsSystem.init();
 
+      // Render detailed region content helper
+      const renderRegionContent = (visit) => {
+        regionSection.classList.remove('hidden');
+        regionContent.innerHTML = `
+          <h3 style="margin-bottom: 10px; color: var(--primary-color);">${visit.name} <small style="color: #666; font-size: 0.8em;">(${visit.prefecture})</small></h3>
+          <div style="font-size: 13px; line-height: 1.5; background: rgba(255,255,255,0.4); padding: 10px; border-radius: 8px; margin-bottom: 8px;">
+            <strong>🏠 移住制度:</strong> <p style="margin-top: 4px; color: #444;">${visit.migration}</p>
+          </div>
+          <div style="font-size: 13px; line-height: 1.5; background: rgba(255,255,255,0.4); padding: 10px; border-radius: 8px; margin-bottom: 8px;">
+            <strong>👶 子育て支援:</strong> <p style="margin-top: 4px; color: #444;">${visit.childcare}</p>
+          </div>
+          <div style="font-size: 13px; line-height: 1.5; background: rgba(255,255,255,0.4); padding: 10px; border-radius: 8px; margin-bottom: 8px;">
+            <strong>🤝 福祉サポート:</strong> <p style="margin-top: 4px; color: #444;">${visit.welfare}</p>
+          </div>
+          <div style="font-size: 13px; line-height: 1.5; background: rgba(255,255,255,0.4); padding: 10px; border-radius: 8px; margin-bottom: 12px;">
+            <strong>✨ おすすめスポット:</strong>
+            <ul style="margin-top: 4px; padding-left: 20px; color: #444;">
+              ${visit.spots.map(s => `<li>${s}</li>`).join('')}
+            </ul>
+          </div>
+          ${visit.link ? `
+          <a href="${visit.link}" target="_blank" class="playlist-ui" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); text-decoration: none; box-shadow: 0 4px 15px rgba(0, 242, 254, 0.4); display: flex; align-items: center; justify-content: center; gap: 8px;">
+            <span class="material-icons-round" style="font-size: 20px;">open_in_new</span>
+            <span>自治体公式の支援情報を見る</span>
+          </a>
+          ` : ''}
+        `;
+      };
+
       // Initial UI Render
       const renderUI = () => {
-        // Update EXP Bar
+        // Update EXP Bar (always full now due to 1-tap level up)
         const expPercentage = (userData.exp / userData.maxExp) * 100;
         expFill.style.width = `${Math.min(expPercentage, 100)}%`;
         expText.textContent = `${userData.exp} / ${userData.maxExp}`;
@@ -839,6 +1059,9 @@
 
         // Update Background based on level (Cycle through 1 to 4)
         bgLayer.className = `bg-level-${((userData.level - 1) % 4) + 1}`;
+
+        // Update illustration pin active states dynamically
+        updateMapPins();
 
         // Update Visited List
         visitedList.innerHTML = '';
@@ -857,25 +1080,7 @@
           // Show regional info for the latest visit
           const latestVisit = userData.visits[userData.visits.length - 1];
           if (latestVisit && latestVisit.migration) {
-            regionSection.classList.remove('hidden');
-            regionContent.innerHTML = `
-              <h3 style="margin-bottom: 10px; color: var(--primary-color);">${latestVisit.name} <small style="color: #666; font-size: 0.8em;">(${latestVisit.prefecture})</small></h3>
-              <div style="font-size: 13px; line-height: 1.5; background: rgba(255,255,255,0.4); padding: 10px; border-radius: 8px; margin-bottom: 8px;">
-                <strong>🏠 移住制度:</strong> <p style="margin-top: 4px; color: #444;">${latestVisit.migration}</p>
-              </div>
-              <div style="font-size: 13px; line-height: 1.5; background: rgba(255,255,255,0.4); padding: 10px; border-radius: 8px; margin-bottom: 8px;">
-                <strong>👶 子育て支援:</strong> <p style="margin-top: 4px; color: #444;">${latestVisit.childcare}</p>
-              </div>
-              <div style="font-size: 13px; line-height: 1.5; background: rgba(255,255,255,0.4); padding: 10px; border-radius: 8px; margin-bottom: 8px;">
-                <strong>🤝 福祉サポート:</strong> <p style="margin-top: 4px; color: #444;">${latestVisit.welfare}</p>
-              </div>
-              <div style="font-size: 13px; line-height: 1.5; background: rgba(255,255,255,0.4); padding: 10px; border-radius: 8px;">
-                <strong>✨ おすすめスポット:</strong>
-                <ul style="margin-top: 4px; padding-left: 20px; color: #444;">
-                  ${latestVisit.spots.map(s => `<li>${s}</li>`).join('')}
-                </ul>
-              </div>
-            `;
+            renderRegionContent(latestVisit);
           }
         }
 
@@ -888,20 +1093,36 @@
           const secretGallery = document.getElementById('secret-gallery');
           if (secretGallery) {
             secretGallery.innerHTML = ''; // Clear existing
+            
+            // Map our level-unlocked secret food images
+            const secretImages = {
+              3: 'assets/media__1779358668110.jpg',
+              4: 'assets/media__1779358668117.jpg',
+              5: 'assets/media__1779358668358.jpg',
+              6: 'assets/media__1779358668363.jpg',
+              7: 'assets/media__1779358668374.jpg'
+            };
+
             // Add an image for each level unlocked (from level 3 to current)
             for (let lvl = 3; lvl <= userData.level; lvl++) {
+              let imgSrc = secretImages[lvl];
+              if (!imgSrc) {
+                // Loop images if level goes beyond 7
+                const imgKeys = Object.keys(secretImages);
+                const index = (lvl - 3) % imgKeys.length;
+                imgSrc = secretImages[imgKeys[index]];
+              }
+
               const wrapper = document.createElement('div');
               wrapper.style.position = 'relative';
               wrapper.style.flexShrink = '0';
               wrapper.style.scrollSnapAlign = 'center';
 
               const img = document.createElement('img');
-              img.src = 'assets/secret_image.jpg';
+              img.src = imgSrc;
               img.className = 'secret-img';
               img.alt = `Level ${lvl} Secret`;
               img.onerror = () => { img.src = `https://via.placeholder.com/250x250?text=Lv.${lvl}+Secret`; };
-              // Change hue per level to make them visually distinct
-              img.style.filter = `hue-rotate(${lvl * 45}deg) saturate(1.2)`;
               
               const label = document.createElement('div');
               label.textContent = `Lv.${lvl}`;
@@ -930,23 +1151,7 @@
         });
       };
 
-      // Level Up Logic
-      const checkLevelUp = () => {
-        if (userData.exp >= userData.maxExp) {
-          userData.level += 1;
-          userData.exp = userData.exp - userData.maxExp;
-          userData.maxExp = userData.level * 100; // Linear scaling for realistic Level 50+
-          
-          showLevelUpToast(userData.level);
-          
-          // Trigger confetti/stamp burst
-          for(let i=0; i<5; i++) {
-            setTimeout(() => physicsSystem.addStamp('levelup'), i * 100);
-          }
-        }
-      };
-
-      // Toast notification
+      // Level Up Toast notification
       const showLevelUpToast = (newLevel) => {
         const toast = document.createElement('div');
         toast.className = 'level-up-toast';
@@ -963,7 +1168,7 @@
         }, 3000);
       };
 
-      // Handle Scan Action
+      // Handle Scan Action (1 tap = 1 level up directly)
       const performScan = () => {
         // Show scanning UI
         scanOverlay.classList.remove('hidden');
@@ -976,11 +1181,17 @@
           const newLocation = dataService.getRandomLocation();
           userData.visits.push(newLocation);
           
-          // Add EXP
-          userData.exp += 35; // 35 EXP per scan
+          // Level up directly (1 tap = 1 level up!)
+          userData.level += 1;
+          userData.exp = 0; 
+          userData.maxExp = userData.level * 100;
           
-          // Check Level Up
-          checkLevelUp();
+          showLevelUpToast(userData.level);
+          
+          // Trigger confetti/stamp burst
+          for(let i=0; i<5; i++) {
+            setTimeout(() => physicsSystem.addStamp('levelup'), i * 100);
+          }
           
           // Save
           dataService.saveData(userData);
@@ -998,20 +1209,17 @@
       if (playVoiceBtn) {
         playVoiceBtn.addEventListener('click', () => {
           if ('speechSynthesis' in window) {
-            // Cancel any ongoing speech
             window.speechSynthesis.cancel();
             
             const msg = new SpeechSynthesisUtterance();
             msg.text = `レベル${userData.level}、おめでとーっ！今日も会いに来てくれて、すっごく嬉しいなっ！これからもいーっぱい、いろんなところ一緒に行こうね！`;
             msg.lang = 'ja-JP';
-            msg.rate = 1.35; // さらに少し早口にして元気さをアピール
-            msg.pitch = 1.9; // ピッチを限界近くまで上げて可愛らしい声に
+            msg.rate = 1.35; 
+            msg.pitch = 1.9; 
             
-            // 可能であれば女性の声を選択する
             const voices = window.speechSynthesis.getVoices();
             const jaVoices = voices.filter(v => v.lang.includes('ja'));
             if (jaVoices.length > 0) {
-               // Microsoft Nanami（可愛らしい声）やその他の日本語音声があれば優先
                const cuteVoice = jaVoices.find(v => v.name.includes('Nanami') || v.name.includes('Haruka'));
                if (cuteVoice) {
                    msg.voice = cuteVoice;
@@ -1022,7 +1230,7 @@
             
             window.speechSynthesis.speak(msg);
             
-            // 視覚的なフィードバック
+            // Visual feedback
             playVoiceBtn.style.transform = 'scale(0.95)';
             setTimeout(() => playVoiceBtn.style.transform = 'none', 150);
           } else {
@@ -1031,13 +1239,97 @@
         });
       }
 
+      // Admin Command Listener (Visible password field processing)
+      const setupAdminCommands = () => {
+        const adminInput = document.getElementById('admin-code-input');
+        if (adminInput) {
+          adminInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+              const code = adminInput.value.trim();
+              adminInput.value = ''; // Immediately clear input for security
+              adminInput.blur();
+              
+              if (code === 'yan') {
+                // Reset level and visits information
+                userData = {
+                  userId: 'user_' + Math.random().toString(36).substring(2, 9),
+                  level: 1,
+                  exp: 0,
+                  maxExp: 100,
+                  visits: []
+                };
+                dataService.saveData(userData);
+                physicsSystem.clearStamps();
+                
+                // Reset UI sections state
+                regionSection.classList.add('hidden');
+                secretContent.classList.remove('hidden');
+                secretContentUnlocked.classList.add('hidden');
+                
+                renderUI();
+                alert("レベル情報と訪問履歴を初期化しました。Lv.1から再開します！");
+              } else if (code === 'nitmc') {
+                // Redirect to Miyakonojo Kosen Website in a new tab
+                window.open('https://www.miyakonojo-nct.ac.jp/', '_blank');
+              }
+            }
+          });
+        }
+      };
+
+      // Update illustration map pins based on visit status
+      const updateMapPins = () => {
+        if (!userData || !userData.visits) return;
+        const activeVisits = userData.visits.map(v => v.name || v);
+        const pins = [
+          { name: "高千穂峡", id: "pin-takachiho-ill" },
+          { name: "青島神社", id: "pin-aoshima-ill" },
+          { name: "サンメッセ日南", id: "pin-nichinan-ill" }
+        ];
+        pins.forEach(p => {
+          const el = document.getElementById(p.id);
+          if (!el) return;
+          if (activeVisits.includes(p.name)) {
+            el.classList.add('active');
+          } else {
+            el.classList.remove('active');
+          }
+        });
+      };
+
+      // Setup click handlers for illustration map pins
+      const setupIllustrationPins = () => {
+        const pins = [
+          { name: "高千穂峡", id: "pin-takachiho-ill" },
+          { name: "青島神社", id: "pin-aoshima-ill" },
+          { name: "サンメッセ日南", id: "pin-nichinan-ill" }
+        ];
+        pins.forEach(p => {
+          const el = document.getElementById(p.id);
+          if (!el) return;
+          el.addEventListener('click', () => {
+            const visit = userData.visits.find(v => (v.name || v) === p.name);
+            if (visit) {
+              renderRegionContent(visit);
+              document.getElementById('region-section').scrollIntoView({ behavior: 'smooth' });
+            } else {
+              // Shake unvisited pin for playful locked feedback
+              el.style.animation = 'none';
+              void el.offsetWidth;
+              el.style.animation = 'shake 0.5s ease-in-out';
+            }
+          });
+        });
+      };
+
       // Event Listeners
       nfcBtn.addEventListener('click', performScan);
 
       // Boot
       renderUI();
-      // Small delay before dropping initial stamps for performance
-      setTimeout(initStamps, 500);
+      setupAdminCommands();
+      setupIllustrationPins();
+      setTimeout(initStamps, 300);
     });
   </script>
 </body>
